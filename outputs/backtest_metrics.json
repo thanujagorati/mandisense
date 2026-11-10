@@ -1,0 +1,110 @@
+{
+  "horizon_days": 7,
+  "flat_threshold": 0.03,
+  "model_version": "hgb-v1",
+  "folds": {
+    "2022": {
+      "rows": 2129,
+      "true_class_share": {
+        "down": 0.419,
+        "flat": 0.212,
+        "up": 0.369
+      },
+      "model": {
+        "accuracy": 0.5242,
+        "macro_f1": 0.4574
+      },
+      "baseline_always_flat": {
+        "accuracy": 0.2118,
+        "macro_f1": 0.1165
+      },
+      "baseline_trend_continues": {
+        "accuracy": 0.3199,
+        "macro_f1": 0.3155
+      },
+      "confident_predictions": {
+        "cutoff": 0.6,
+        "share_of_rows": 0.263,
+        "accuracy": 0.6655
+      },
+      "train_rows": 14378
+    },
+    "2023": {
+      "rows": 2200,
+      "true_class_share": {
+        "down": 0.375,
+        "flat": 0.198,
+        "up": 0.427
+      },
+      "model": {
+        "accuracy": 0.4977,
+        "macro_f1": 0.4237
+      },
+      "baseline_always_flat": {
+        "accuracy": 0.1977,
+        "macro_f1": 0.1101
+      },
+      "baseline_trend_continues": {
+        "accuracy": 0.3118,
+        "macro_f1": 0.3051
+      },
+      "confident_predictions": {
+        "cutoff": 0.6,
+        "share_of_rows": 0.244,
+        "accuracy": 0.6884
+      },
+      "train_rows": 16514
+    },
+    "2024": {
+      "rows": 2149,
+      "true_class_share": {
+        "down": 0.362,
+        "flat": 0.225,
+        "up": 0.413
+      },
+      "model": {
+        "accuracy": 0.5016,
+        "macro_f1": 0.3965
+      },
+      "baseline_always_flat": {
+        "accuracy": 0.2248,
+        "macro_f1": 0.1223
+      },
+      "baseline_trend_continues": {
+        "accuracy": 0.3039,
+        "macro_f1": 0.2984
+      },
+      "confident_predictions": {
+        "cutoff": 0.6,
+        "share_of_rows": 0.349,
+        "accuracy": 0.6328
+      },
+      "train_rows": 18714
+    }
+  },
+  "all_folds_pooled": {
+    "rows": 6478,
+    "true_class_share": {
+      "down": 0.385,
+      "flat": 0.211,
+      "up": 0.403
+    },
+    "model": {
+      "accuracy": 0.5077,
+      "macro_f1": 0.4279
+    },
+    "baseline_always_flat": {
+      "accuracy": 0.2113,
+      "macro_f1": 0.1163
+    },
+    "baseline_trend_continues": {
+      "accuracy": 0.3118,
+      "macro_f1": 0.3076
+    },
+    "confident_predictions": {
+      "cutoff": 0.6,
+      "share_of_rows": 0.285,
+      "accuracy": 0.6589
+    }
+  }
+}
