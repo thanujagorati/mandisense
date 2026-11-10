@@ -5,7 +5,9 @@ Examples (run from the mandisense folder):
     python scripts/demo_recommend.py --home Bowenpally --date 2023-09-04 --quintals 50
 
 Forecasts exist for days in 2022-2024 when the mandi reported a price. Each one came from a
-model that was trained only on earlier years.
+model that was trained only on earlier years. Typical price moves are measured on 2014-2021 data
+only. The usual price gap between two mandis is the median of the 90 days before the replayed
+date, so nothing from the future leaks in.
 """
 import argparse
 import os
@@ -23,7 +25,7 @@ from app.engine import (DEFAULT_MEAN_RETURNS, Assumptions, Forecast, MandiQuote,
 
 load_dotenv()
 
-CUTOFF = pd.Timestamp("2022-01-01")   # typical moves are measured only on data before this date
+CUTOFF = pd.Timestamp("2022-01-01")   # typical moves and usual gaps are measured only before this date
 
 
 def fetch_df(conn, sql: str) -> pd.DataFrame:
@@ -41,11 +43,32 @@ def price_asof(prices: pd.DataFrame, mandi_id: int, date: pd.Timestamp, max_age_
     return None if s.empty else float(s.iloc[-1]["price"])
 
 
-def typical_moves(prices: pd.DataFrame) -> dict:
-    """Average 7-day price change when the OUTCOME was down / flat / up (down < -3%, up > +3%).
+def avg_price(prices: pd.DataFrame, mandi_id: int, date: pd.Timestamp, days: int = 3):
+    """Average of the prices reported in the last `days` days (smooths day-to-day noise)."""
+    s = prices[(prices["mandi_id"] == mandi_id)
+               & (prices["date"] <= date)
+               & (prices["date"] > date - pd.Timedelta(days=days))]
+    return None if s.empty else float(s["price"].mean())
 
-    Measured on 2014-2021 data only, so replaying 2022-2024 never uses information from its own period.
-    """
+
+def usual_ratios(prices: pd.DataFrame, home_id: int, date: pd.Timestamp,
+                 window_days: int = 90, min_days: int = 30) -> dict:
+    """How each mandi usually prices versus the home mandi: the median same-day ratio over the
+    90 days BEFORE the decision date. Gaps drift slowly, so a moving window beats a fixed number,
+    and it uses only information that was available on the day."""
+    w = prices[(prices["date"] < date) & (prices["date"] >= date - pd.Timedelta(days=window_days))]
+    wide = w.pivot_table(index="date", columns="mandi_id", values="price")
+    if home_id not in wide.columns:
+        return {}
+    ratio = wide.div(wide[home_id], axis=0)
+    counts = ratio.count()
+    med = ratio.median()
+    return {int(k): float(v) for k, v in med.items()
+            if k != home_id and pd.notna(v) and counts[k] >= min_days}
+
+
+def typical_moves(prices: pd.DataFrame) -> dict:
+    """Average 7-day price change when the OUTCOME was down / flat / up (down < -3%, up > +3%)."""
     old = prices[prices["date"] < CUTOFF].copy()
     old["date"] = old["date"].astype("datetime64[ns]")      # same precision on both sides of the join
     old["target"] = old["date"] + pd.Timedelta(days=7)
@@ -100,20 +123,21 @@ def main() -> None:
     f_row = f_row.iloc[0]
     forecast = Forecast(float(f_row["p_down"]), float(f_row["p_flat"]), float(f_row["p_up"]))
 
-    def quote(row, price):
+    def quote(row, price, ratio=1.0):
         lat = None if pd.isna(row["lat"]) else float(row["lat"])
         lon = None if pd.isna(row["lon"]) else float(row["lon"])
-        return MandiQuote(row["name"], price, lat, lon)
+        return MandiQuote(row["name"], price, lat, lon, ratio)
 
-    home_price = price_asof(prices, home_id, date, 0)
-    home = quote(home_row.iloc[0], home_price)
+    home = quote(home_row.iloc[0], price_asof(prices, home_id, date, 0))
+    ratios = usual_ratios(prices, home_id, date)
     others = []
     for _, r in mandis.iterrows():
-        if int(r["id"]) == home_id:
+        mid = int(r["id"])
+        if mid == home_id or mid not in ratios:
             continue
-        p = price_asof(prices, int(r["id"]), date, 3)   # latest price within 3 days
+        p = avg_price(prices, mid, date, 3)   # 3-day average smooths daily noise
         if p is not None:
-            others.append(quote(r, p))
+            others.append(quote(r, p, ratios[mid]))
 
     mean_returns = typical_moves(prices)
     a = Assumptions()
@@ -132,7 +156,8 @@ def main() -> None:
     print("\nAssumptions you can change: freight Rs "
           f"{a.freight_rs_per_qtl_km}/quintal/km, road factor {a.road_factor}, handling Rs "
           f"{a.handling_rs_per_qtl}/quintal, holding cost {a.holding_cost_pct_per_day:.1%}/day, "
-          f"minimum trip {a.min_distance_km:g} km.")
+          f"minimum trip {a.min_distance_km:g} km, WAIT margin {a.min_advantage_pct:.0%}, "
+          f"MOVE margin {a.move_min_advantage_pct:.0%}.")
 
     # Reveal what really happened
     later = price_asof(prices, home_id, date + pd.Timedelta(days=7), 2)
@@ -146,9 +171,22 @@ def main() -> None:
               f"({later / home.price_rs_qtl - 1:+.1%} vs that day).")
         print(f"Selling that day:   Rs {sell_net:,.0f}")
         print(f"Waiting 7 days:     Rs {wait_net:,.0f}  ({wait_net - sell_net:+,.0f} vs selling that day)")
-        chosen = next(o for o in rec.options if o.action == rec.action and o.mandi == rec.mandi)
-        realised = {"SELL_NOW": sell_net, "WAIT": wait_net}.get(rec.action, chosen.net_rs)
-        print(f"Following the advice ({rec.action}): Rs {realised:,.0f}  ({realised - sell_net:+,.0f} vs selling that day)")
+        if rec.action == "MOVE":
+            dest = mandis[mandis["name"] == rec.mandi].iloc[0]
+            dest_id = int(dest["id"])
+            arrival = price_asof(prices, dest_id, date + pd.Timedelta(days=1), 3)   # next-day arrival price
+            chosen = next(o for o in rec.options if o.action == "MOVE" and o.mandi == rec.mandi)
+            if arrival is None:
+                print("No price recorded at the destination around arrival, so the move cannot be checked.")
+                realised = None
+            else:
+                realised = arrival / ratios[dest_id] * args.quintals - chosen.cost_rs
+                print(f"{rec.mandi} the next day paid Rs {arrival:,.0f} (its usual level is "
+                      f"{ratios[dest_id]:.2f}x {home.name}).")
+        else:
+            realised = {"SELL_NOW": sell_net, "WAIT": wait_net}[rec.action]
+        if realised is not None:
+            print(f"Following the advice ({rec.action}): Rs {realised:,.0f}  ({realised - sell_net:+,.0f} vs selling that day)")
 
 
 if __name__ == "__main__":
