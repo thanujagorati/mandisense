@@ -1,0 +1,18 @@
+{
+  "estimated_flexibility": 0.0088,
+  "r_squared": 0.0016,
+  "yearly": {
+    "2014": -0.0107,
+    "2015": 0.0236,
+    "2016": 0.0246,
+    "2017": -0.0005,
+    "2018": 0.0087,
+    "2019": -0.0002,
+    "2020": -0.0046,
+    "2021": 0.0168
+  },
+  "flexibility_used": -0.25,
+  "estimate_was_used": false,
+  "reason": "estimate looks implausible or unstable, so a cautious placeholder is used instead",
+  "measured_on": "2014-2021"
+}
