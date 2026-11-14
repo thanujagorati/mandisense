@@ -164,9 +164,10 @@ def recommend(home: MandiQuote, others: list, forecast: Forecast, quintals: floa
          f"up {forecast.p_up:.0%} (expected change {exp_ret:+.1%} before holding costs)."),
     ]
     if chosen.action == "SELL_NOW":
-        reasons.append(
-            f"Waiting must beat selling now by {a.min_advantage_pct:.0%} and moving by "
-            f"{a.move_min_advantage_pct:.0%} after costs; nothing clears that bar, so selling now is the safe choice.")
+        bar = f"Waiting must beat selling now by {a.min_advantage_pct:.0%}"
+        if any(o.action == "MOVE" for o in options):
+            bar += f" and moving by {a.move_min_advantage_pct:.0%}"
+        reasons.append(bar + " after costs; nothing clears that bar, so selling now is the safe choice.")
         confidence = confidence_label(forecast)
     elif chosen.action == "WAIT":
         reasons.append(
