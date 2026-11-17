@@ -100,25 +100,17 @@ function renderAdvice(r) {
     `<tr><td>${esc(o.action.replace("_", " "))}</td><td>${fmtRs(o.net_rs)}</td><td>${fmtRs(o.cost_rs)}</td><td>${esc(o.note)}</td></tr>`
   ).join("");
   const a = r.assumptions;
-  const pct = (k) => Math.round(f[k] * 100);
-  const lean = f.down >= f.up ? `price is more likely to fall (${pct("down")}%) than rise (${pct("up")}%)`
-                              : `price is more likely to rise (${pct("up")}%) than fall (${pct("down")}%)`;
-  const plain = isWait
-    ? `Over the next week the ${lean}. Waiting is expected to earn more, even after storage losses.`
-    : `Over the next week the ${lean}. Waiting is not expected to beat selling now, so selling today is the safer choice. Confidence: ${r.confidence}.`;
   $("advice").innerHTML = `
     <h2>Advice for ${esc(r.mandi)} on ${esc(r.date)}</h2>
     <p class="sub">${r.quintals} quintals (${r.quintals / 10} tonnes) at ${fmtRs(r.price_today_rs_qtl)} per quintal</p>
     <div class="verdict ${isWait ? "wait" : "sell"}">
-      <span class="chip">${isWait ? "WAIT ABOUT A WEEK" : "SELL TODAY"}</span>
+      <span class="chip">${isWait ? "WAIT" : "SELL NOW"}</span>
+      <span class="conf">forecast confidence: ${esc(r.confidence)}</span>
     </div>
-    <p class="plain">${esc(plain)}</p>
-    <details class="more"><summary>Why? Show the numbers</summary>
-      <p class="sub">Forecast confidence: ${esc(r.confidence)}. Model's 7-day outlook ("flat" = within 3% of today's price):</p>
-      <div class="probbar">${bar}</div>
-      <ul class="reasons">${r.reasons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
-      <table><tr><th>Option</th><th>Expected money in hand</th><th>Costs</th><th></th></tr>${options}</table>
-    </details>
+    <p class="sub">Model's 7-day outlook ("flat" = within 3% of today's price):</p>
+    <div class="probbar">${bar}</div>
+    <ul class="reasons">${r.reasons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+    <table><tr><th>Option</th><th>Expected money in hand</th><th>Costs</th><th></th></tr>${options}</table>
     <div class="row buttons"><button id="reveal" class="primary">Reveal what happened next</button></div>
     <div id="replay" class="replay hidden"></div>
     <details><summary>Assumptions used (all adjustable in the code)</summary>

@@ -104,6 +104,5 @@ footer { color: var(--muted); font-size: 12px; padding: 20px 24px 40px; max-widt
 }
 
 .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); }
-.chip { font-size: 26px !important; padding: 10px 22px !important; }
 .plain { font-size: 17px; line-height: 1.5; margin: 8px 0 12px; }
 .more > summary { cursor: pointer; color: var(--blue); }
