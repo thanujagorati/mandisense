@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MandiSense</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Mandi<span>Sense</span></h1>
+      <p>Sell-now-or-wait advice for onion farmers and FPOs, with the reasoning and the odds shown.</p>
+    </div>
+    <span class="badge">Replay mode: real mandi prices, 2014-2024</span>
+  </header>
+
+  <main class="layout">
+    <section class="left">
+      <div id="map"></div>
+      <p class="note">Mandi positions are approximate (the dataset has city-level coordinates). Click a mandi to make it your home mandi.</p>
+    </section>
+
+    <section class="right">
+      <div class="panel">
+        <h2>Ask for advice</h2>
+        <p class="sub">Pick a mandi and a past day. The model only sees data up to that day; then you can reveal what really happened.</p>
+        <div class="row">
+          <label>Home mandi<select id="home"></select></label>
+          <label>Day (2022-2024)<input type="date" id="date" min="2022-01-01" max="2024-12-30" value="2024-03-15"></label>
+          <label>Quintals<input type="number" id="quintals" min="1" max="5000" value="80"></label>
+        </div>
+        <div class="row buttons">
+          <button id="go" class="primary">Get advice</button>
+          <button id="random" class="ghost">Random day</button>
+        </div>
+        <div class="presets">
+          <span>Try:</span>
+          <button class="chipbtn" data-home="Gudimalkapur" data-date="2024-03-15" data-q="80">Mar 2024: price falls</button>
+          <button class="chipbtn" data-home="Gudimalkapur" data-date="2022-06-10" data-q="80">Jun 2022: price rises</button>
+          <button class="chipbtn" data-home="Bowenpally" data-date="2023-09-04" data-q="50">Sep 2023: flat</button>
+        </div>
+        <p id="status" class="status"></p>
+      </div>
+
+      <div id="advice" class="panel hidden"></div>
+
+      <div id="split" class="panel hidden">
+        <h2>FPO what-if: share a big lot between mandis</h2>
+        <p class="sub">Every mandi is assumed to pay the home price that day. Gains come only from spreading volume, minus transport.</p>
+        <div class="row">
+          <label>Lot size: <b id="tonnesVal">30 tonnes</b>
+            <input type="range" id="tonnes" min="1" max="60" step="1" value="30"></label>
+          <label>Price effect of extra arrivals: <b id="flexVal">-0.25 (assumed)</b>
+            <input type="range" id="flex" min="-0.5" max="0" step="0.05" value="-0.25"></label>
+        </div>
+        <div class="row buttons">
+          <button id="flexZero" class="ghost">Use 0 (what our data suggested)</button>
+        </div>
+        <div id="splitBody"></div>
+      </div>
+
+      <div id="compare" class="panel hidden"></div>
+
+      <div id="evidence" class="panel">
+        <h2>How good is the forecast? (honest numbers)</h2>
+        <div id="evidenceBody"><p class="sub">Loading...</p></div>
+        <h3>What we tested and what we found</h3>
+        <ul class="findings">
+          <li><b>The forecast has a real but modest edge.</b> It is tested year by year, trained only on earlier years. It is a lean, not a guarantee.</li>
+          <li><b>"Move to another mandi" advice was dropped.</b> Reported prices between nearby mandis differ persistently and noisily, and our data cannot separate real opportunities from grade differences. We show a price comparison instead.</li>
+          <li><b>The price effect of a big lot could not be measured.</b> Our data showed no detectable effect, so the split tool is a what-if simulator with an explicit assumption. At zero effect there is no gain.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Data: Agmarknet daily mandi prices, via the open research dataset by R. Shelar, A. Hajare and S. Mangarule (Mendeley Data, CC BY 4.0).
+    Map: OpenStreetMap contributors, CARTO. This is decision support from historical data, not financial advice.
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

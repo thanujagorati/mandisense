@@ -5,11 +5,13 @@
 then open http://127.0.0.1:8000/docs
 """
 from datetime import date as Date
+from pathlib import Path
 
 import psycopg2
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app import service
@@ -167,11 +169,6 @@ class SplitOut(BaseModel):
 
 
 # ------------------------------------------------------------------ routes
-@app.get("/", include_in_schema=False)
-def root():
-    return RedirectResponse("/docs")
-
-
 @app.get("/health", tags=["system"])
 def health():
     """Checks that the API is up and can reach the database."""
@@ -245,3 +242,10 @@ def backtest():
 def assumptions():
     """Every adjustable assumption used by the decision and split engines."""
     return service.assumptions_view()
+
+
+# The web page is served by the same service, so the browser and the API share one address
+# (no cross-origin problems, and one thing to deploy). Mounted last so the API routes win.
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+if WEB_DIR.exists():
+    app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
