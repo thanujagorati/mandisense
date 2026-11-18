@@ -3,6 +3,8 @@
 **Track:** Agriculture | **Event:** Code-X-Novas Innovathon
 **Team / author:** Gorati Thanuja, GNITS Hyderabad
 **Repository:** https://github.com/thanujagorati/mandisense | 
+**Live demo:** https://mandisense-ul23.onrender.com/ 
+(free hosting: the first load can take ~1 minute to wake up)
 
 ## 1. Problem
 
